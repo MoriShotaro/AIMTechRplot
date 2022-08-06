@@ -3,6 +3,7 @@
 if(!dir.exists(paste(odir,"index",sep="/"))){dir.create(paste(odir,"index",sep="/"),recursive=T)}
 pdf(paste(odir,'index','plot_main.pdf',sep="/"),width=10,height=7)
 
+
 # Function ----------------------------------------------------------------
 
 fplot_share <- function(var,totvar,ylabel,ylim=c(0,NA),ylab=waiver(),name_file,cpt=NULL){
