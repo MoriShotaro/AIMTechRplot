@@ -23,6 +23,7 @@ odir <- paste(cdir,"output",project,date,sep="/")
 ddir <- paste(cdir,"data",project,date,"main",sep="/")
 pdir <- paste(cdir,"prog",sep="/")
 mdir <- paste(pdir,"inc_prog",sep="/")
+tdir <- paste(cdir,"tools",sep="/")
 gdir <- "C:/GAMS/win64/26.1"
 
 # Make input/output directory

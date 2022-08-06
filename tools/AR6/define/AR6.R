@@ -1,7 +1,6 @@
 #library--------------------------------------------------------------------
 
 library(gdxrrw)
-library(ggplot2)
 library(dplyr)
 library(tidyr)
 library(stringr)
@@ -15,11 +14,6 @@ igdx('F:/smori/GAMS/38')
 source('./Category.R')
 
 # input data --------------------------------------------------------------
-
-# Variable list
-Variables <- read.csv('../data/variable.csv',header=F) %>% 
-  rename("Variable2"=V1,"Variable"=V2)
-Varlist <- Variables$Variable
 
 #Input IPCC AR6 Scenario Database
 df <- fread('../data/AR6_Scenario_Database.csv',stringsAsFactors=FALSE,header=TRUE) %>% 
