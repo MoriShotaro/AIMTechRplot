@@ -1,7 +1,8 @@
 # Option ------------------------------------------------------------------
 
-general <- TRUE
-index <- TRUE
+general <- FALSE
+index <- FALSE
+bind_baseline <- FALSE
 
 # library -----------------------------------------------------------------
 
@@ -11,18 +12,20 @@ library(stringr)
 library(patchwork)
 library(readr)
 library(scales)
+library(data.table)
 
 
 # Setting -----------------------------------------------------------------
 
 # General information
-date <- "2208041109"
+date <- "2209052209"
 project <- "model_expansion"
 cdir <- getwd()
 odir <- paste(cdir,"output",project,date,sep="/")
 ddir <- paste(cdir,"data",project,date,"main",sep="/")
 pdir <- paste(cdir,"prog",sep="/")
 mdir <- paste(pdir,"inc_prog",sep="/")
+othdir <- paste(pdir,"others",sep="/")
 tdir <- paste(cdir,"tools",sep="/")
 gdir <- "C:/GAMS/win64/26.1"
 
@@ -47,10 +50,9 @@ df_all <- rgdx.param(paste(ddir,"merged_output.gdx",sep="/"),"iamc_gdx") %>%
   mutate(Year=as.numeric(as.character(Year)),Region=as.character(Region),Scenario=as.character(Scenario)) %>% 
   filter(Region%in%reg_in)
 
-
 # Import scenario data
 scen_mat <- read_csv(paste(ddir,"scenario_table.csv",sep="/"))
-
+if(bind_baseline){source(paste(othdir,"220818_BindBaseline.R",sep="/"))}
 
 # Load sub-programs
 source(paste(mdir,"dataframe.R",sep="/"))

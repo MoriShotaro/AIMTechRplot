@@ -6,79 +6,77 @@ library(stringr)
 library(data.table)
 
 
+# Make output directory ---------------------------------------------------
+
+if(!dir.exists(paste(odir,"AR6",sep="/"))){dir.create(paste(odir,"AR6",sep="/"),recursive=T)}
+pdf(paste(odir,'AR6','plot_main.pdf',sep="/"),width=10,height=7)
+
 # Input data --------------------------------------------------------------
 
-dfAR6 <- fread(paste0(tdir,"/AR6/output/AR6_Scenario_Database.csv"),stringsAsFactors=FALSE,header=TRUE) %>% 
-  pivot_longer(cols=as.character(seq(2010,2100,5)),names_to="Variable",values_to="Value")
+dfAR6 <- fread(paste0(tdir,"/AR6/output/AR6_Scenario_Database_Enduse.csv"),stringsAsFactors=FALSE,header=TRUE) %>% 
+  pivot_longer(cols=c(Y2010:Y2100),names_to="Year",values_to="Value",names_prefix="Y") %>%
+  mutate(Year=as.numeric(Year)) %>% 
+  drop_na(Value)
 
-# Functions ---------------------------------------------------------------
+source(paste0(tdir,"/AR6/prog/inc_prog/func_AR6.R"))
 
-fplot_boxpath <- function(var, scen, bscen, byear, ylabel, ylim=NULL, ylab=waiver(), w=150, h=100, cpt=NULL, name_file){
-  dt <- df %>% 
-    filter(Variable %in% var) %>%
-    mutate(Scenario=factor(Scenario, levels=scen_mat$Scenario)) %>%
-    filter(Scenario!='historical') %>% 
-    filter(Scenario%in%scen)
-  dt2 <- dfAR6 %>% 
-    filter(Variable %in% var, Year %in% byear) %>% 
-    filter(Name %in% scen|Model %in% scen|Scenario %in% scen|Category %in% scen)
-  if(nrow(dt)>0){
-    p <- ggplot()+
-      geom_path(data=dt, aes(x=Year, y=Value, color=Scenario), show.legend=T, alpha=1)+
-      geom_boxplot(data=dt, aes(x=Year, y=Value))+
-      labs(title=cpt, x=NULL, y=ylabel)+
-      scale_y_continuous(limits=ylim, labels=ylab)
-    if(length(var) > 1){
-      p <- p+facet_wrap(~Variable,scales='free_y')
-    }
-    p <- p+theme_bw()+
-      theme(legend.position='right', strip.background=element_blank(),panel.grid.minor=element_blank(),
-            axis.text.x=element_text(angle=45, hjust=1))
-    if(name_file!=F){
-      ggsave(filename=paste0(odir,"/general/",name_file,".png"), plot=p, width=w, height=h, units='mm', dpi=300)
-    }
-    return(p)
-  } else {
-    print('error: empty data frame')
-  }
-}
+# Scenario selection ------------------------------------------------------
 
-fplot_sharepath <- function(var,totvar,scen,bscen,byear,ylabel,ylim=c(0,NA),ylab=waiver(),name_file,cpt=NULL){
-  varlist <- str_c(totvar,var,sep="_")
-  dt <-  df_all %>% 
-    filter(Variable %in% c(totvar,varlist)) %>% 
-    pivot_wider(names_from = Variable, values_from = Value) %>%
-    mutate(across(c(starts_with(totvar)),~.x*100/eval(parse(text=totvar)))) %>% 
-    select(-eval(totvar)) %>% 
-    pivot_longer(cols=c(starts_with(totvar)),names_to="Variable",values_to="Value") %>% 
-    mutate(Scenario=factor(Scenario, levels=scen_mat$Scenario)) %>%
-    filter(Scenario!='historical') %>% 
-    filter(Scenario%in%scen)
-  dt2 <- dfAR6 %>% 
-    filter(Variable %in% var, Year %in% byear) %>% 
-    filter(Name %in% scen|Model %in% scen|Scenario %in% scen|Category %in% scen)
-  w <- 250
-  h <- ceiling(length(varlist)/3)*75
-  if(nrow(dt)>0){
-    p <- ggplot(data=dt)+
-      geom_path(aes(x=Year, y=Value, color=Scenario), show.legend=T, alpha=1)+
-      geom_boxplot(data=dt, aes(x=Year, y=Value))+
-      labs(title=cpt, x=NULL, y=ylabel)+
-      scale_y_continuous(limits=ylim, labels=ylab)
-    if(length(var) > 1){
-      p <- p+facet_wrap(~Variable,scales='free_y',ncol=3)
-    }
-    p <- p+theme_bw()+
-      theme(legend.position='right', strip.background=element_blank(),panel.grid.minor=element_blank(),
-            axis.text.x=element_text(angle=45, hjust=1))
-    if(name_file!=F){
-      ggsave(filename=paste0(odir,"/index/",name_file,".png"), plot=p, width=w, height=h, units='mm', dpi=300)
-    }
-    return(p)
-  } else {
-    print('error: empty data frame')
-  }
-}
+nmls <- c("MESSAGE-GLOBIOM 1.0|SSP2-Baseline","AIM/Hub-Global 2.0|Baseline","WITCH-GLOBIOM 3.1|SSP2-Baseline",
+          "IMAGE 3.2|SSP2-baseline","REMIND-MAgPIE 1.5|SSP2-Baseline")
+scls <- c("CD-LINKS_INDCi","CO_CurPol","EN_NPi2100","Baseline","EN_INDCi2100","CD-LINKS_NPi","EMF30_Baseline","SSP2-Baseline",
+          "SSP2-baseline","EMF33_Baseline")
+mdls<- c("AIM/CGE 2.1","AIM/CGE2.2","AIM/Hub-Global 2.0")
+ctls<- c()
 
-var_fin <- c("Liq_Oil","SolidsCoa","Gas","Ele","Hyd")
-fplot_sharepath(var_fin,"Fin_Ene",scen="500C",bscen="C1",byear=C(2050,2100),name_file="SHR_fin",ylabel="Share in final energy (%)",cpt="SHR_fin")
+
+# Plot --------------------------------------------------------------------
+
+fplot_boxpath("Fin_Ene",scen=c("Baseline","Baseline_w/o_CTLGTL"),bmodel=mdls,bcat=ctls,
+              byear=c(2050,2100),name_file="Fin_Ene_BP",ylabel="Final energy comsumption (EJ)",cpt="Fin_Ene")
+fplot_jitterpath("Fin_Ene",scen=c("Baseline","Baseline_w/o_CTLGTL"),bscen=scls,
+                 byear=c(2050,2100),name_file="Fin_Ene_JP",ylabel="Final energy comsumption (EJ)",cpt="Fin_Ene",labels=T)
+fplot_jitterpath("Fin_Ene",scen=c("Baseline","Baseline_w/o_CTLGTL"),bname=nmls,
+                 byear=c(2050,2100),name_file="Fin_Ene_JP_CGE",ylabel="Final energy comsumption (EJ)",cpt="Fin_Ene",labels=T)
+fplot_linepath("Fin_Ene",scen=c("Baseline","Baseline_w/o_CTLGTL"),bname=nmls,name_file="Fin_Ene_LP_CGE",ylabel="Final energy comsumption (EJ)",cpt="Fin_Ene",labels=T)
+fplot_linepath("Sec_Ene_Ele",scen=c("Baseline","Baseline_w/o_CTLGTL"),bname=nmls,name_file="Sec_Ele_LP_CGE",ylabel="Power generation (EJ)",cpt="Sec_Ene_Ele")
+fplot_linepath("Emi_CO2_Ene_and_Ind_Pro",scen=c("Baseline","Baseline_w/o_CTLGTL"),bname=nmls,name_file="Emi_CO2_FFI",ylabel=expression(paste(CO[2],' emissions (Mt-',CO[2],'/yr)')),cpt="Emi_CO2_FFI",labels=T)
+
+
+
+# fplot_linepath('Emi_CO2_Ene_and_Ind_Pro',scen="500C",bmodel=mdls,bcat=c("C1"),name_file='EMI_CO2_FFI_LP', ylabel=expression(paste(CO[2],' emissions (Mt-',CO[2],'/yr)')), cpt='Emi_CO2FFI',ylim=c(NA,NA))
+fplot_linepath('Prc_Car',scen=c("SR15_LOS"),bmodel=mdls,bcat=c("C1"),name_file='Prc_Car', ylabel=expression(paste('Carbon price (US$/t-',CO[2],')')), cpt='Prc_Car',ylim=c(NA,NA))
+fplot_jitterpath('Prc_Car',scen=c("SR15_LOS"),bcat=c("C1"),byear=c(2050,2100),name_file='Prc_Car', ylabel=expression(paste('Carbon price (US$/t-',CO[2],')')), cpt='Prc_Car')
+fplot_bandspath('Prc_Car',scen=c("SR15_LOS"),bcat=c("C1"),name_file='Prc_Car_C1', ylabel=expression(paste('Carbon price (US$/t-',CO[2],')')), cpt='Prc_Car')
+fplot_bandspath('Prc_Car',scen=c("SR15_HOS"),bcat=c("C2"),name_file='Prc_Car_C2', ylabel=expression(paste('Carbon price (US$/t-',CO[2],')')), cpt='Prc_Car')
+fplot_bandspath('Fin_Ene',scen=c("SR15_LOS"),bcat=c("C1"),name_file='Fin_Ene_RP_C1', ylabel='Final energy comsumption (EJ)', cpt='Fin_Ene')
+fplot_bandspath('Fin_Ene',scen=c("SR15_HOS"),bcat=c("C2"),name_file='Fin_Ene_RP_C2', ylabel='Final energy comsumption (EJ)', cpt='Fin_Ene')
+fplot_bandspath("Emi_CO2_Ene_and_Ind_Pro",scen=c("SR15_LOS"),bcat=c("C1"),name_file='Emi_CO2_FFI_C1', ylabel=expression(paste(CO[2],' emissions (Mt-',CO[2],'/yr)')), cpt='Emi_CO2_FFI')
+fplot_bandspath("Emi_CO2_Ene_and_Ind_Pro",scen=c("SR15_HOS"),bcat=c("C2"),name_file='Emi_CO2_FFI_C2', ylabel=expression(paste(CO[2],' emissions (Mt-',CO[2],'/yr)')), cpt='Emi_CO2_FFI')
+
+
+var_prm <- c("Win","Solar","Coa","Oil","Gas")
+fplot_lineshare(var_prm,"Prm_Ene",scen=c("Baseline","Baseline_w/o_CTLGTL"),bname=nmls,name_file="SHR_prm",ylabel="Share in primary energy (%)",cpt="SHR_prm")
+
+var_ele <- c("Win","Solar","Coa","Gas")
+fplot_lineshare(var_ele,"Sec_Ene_Ele",scen=c("Baseline","Baseline_w/o_CTLGTL"),bname=nmls,name_file="SHR_ele",ylabel="Share in power generation (%)",cpt="SHR_sec")
+
+var_fin <- c("Liq","SolidCoa","Gas","Ele","Hyd")
+fplot_boxshare(var_fin,"Fin_Ene",scen=c("Baseline","Baseline_w/o_CTLGTL"),bname=nmls,byear=c(2050,2100),name_file="SHR_fin",ylabel="Share in final energy (%)",cpt="SHR_fin")
+fplot_jittershare(var_fin,"Fin_Ene",scen=c("Baseline","Baseline_w/o_CTLGTL"),bname=nmls,byear=c(2050,2100),name_file="SHR_fin_JS",ylabel="Share in final energy (%)",cpt="SHR_fin")
+
+# fplot_boxshare(var_finind,"Fin_Ene_Ind",scen="500C",bname=nmls,byear=c(2050,2100),name_file="SHR_finind",ylabel="Share in final energy (%)",cpt="SHR_finind")
+# fplot_jittershare(var_fin,"Fin_Ene_Ind",scen="500C",bmodel=mdls,bcat=c("C1"),byear=c(2050,2100),name_file="SHR_finind_JS",ylabel="Share in final energy (%)",cpt="SHR_finind")
+# 
+# fplot_boxshare(var_finbui,"Fin_Ene_Res_and_Com",scen="500C",bname=nmls,byear=c(2050,2100),name_file="SHR_finbui",ylabel="Share in final energy (%)",cpt="SHR_finbui")
+# fplot_jittershare(var_fin,"Fin_Ene_Res_and_Com",scen="500C",bmodel=mdls,bcat=c("C1"),byear=c(2050,2100),name_file="SHR_finbui_JS",ylabel="Share in final energy (%)",cpt="SHR_finbui")
+# 
+# fplot_boxshare(var_fintra,"Fin_Ene_Tra",scen="500C",bname=nmls,byear=c(2050,2100),name_file="SHR_fintra",ylabel="Share in final energy (%)",cpt="SHR_fintra")
+# fplot_jittershare(var_fin,"Fin_Ene_Tra",scen="500C",bmodel=mdls,bcat=c("C1"),byear=c(2050,2100),name_file="SHR_fintra_JS",ylabel="Share in final energy (%)",cpt="SHR_fintra")
+
+fplot_lineshare(var_fin,"Fin_Ene",scen=c("Baseline","Baseline_w/o_CTLGTL"),bname=nmls,name_file="SHR_fin_Baseline",ylabel="Share in final energy (%)",cpt="SHR_fin")
+fplot_lineshare(var_fin,"Fin_Ene_Ind",scen=c("Baseline","Baseline_w/o_CTLGTL"),bname=nmls,name_file="SHR_finind_Baseline",ylabel="Share in final energy (%)",cpt="SHR_finind")
+fplot_lineshare(var_fin,"Fin_Ene_Res_and_Com",scen=c("Baseline","Baseline_w/o_CTLGTL"),bname=nmls,name_file="SHR_finbui_Baseline",ylabel="Share in final energy (%)",cpt="SHR_finbui")
+fplot_lineshare(var_fin,"Fin_Ene_Tra",scen=c("Baseline","Baseline_w/o_CTLGTL"),bname=nmls,name_file="SHR_fintra_Baseline",ylabel="Share in final energy (%)",cpt="SHR_fintra")
+
+dev.off()
