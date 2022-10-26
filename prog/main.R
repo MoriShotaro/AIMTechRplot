@@ -2,7 +2,7 @@
 
 general <- FALSE
 index <- FALSE
-bind_baseline <- FALSE
+bind_baseline <- TRUE
 
 # library -----------------------------------------------------------------
 
@@ -18,15 +18,16 @@ library(data.table)
 # Setting -----------------------------------------------------------------
 
 # General information
-date <- "2209052209"
-project <- "model_expansion"
+date <- "m1"
+project <- "220909_Renewable"
 cdir <- getwd()
-odir <- paste(cdir,"output",project,date,sep="/")
-ddir <- paste(cdir,"data",project,date,"main",sep="/")
+odir <- paste(cdir,"output",date,project,"main",sep="/")
+ddir <- paste(cdir,"data",date,project,"main",sep="/")
 pdir <- paste(cdir,"prog",sep="/")
+pdir2 <- paste(pdir,date,project,sep="/")
 mdir <- paste(pdir,"inc_prog",sep="/")
-othdir <- paste(pdir,"others",sep="/")
 tdir <- paste(cdir,"tools",sep="/")
+othdir <- paste(pdir,"others",sep="/")
 gdir <- "C:/GAMS/win64/26.1"
 
 # Make input/output directory
@@ -52,7 +53,7 @@ df_all <- rgdx.param(paste(ddir,"merged_output.gdx",sep="/"),"iamc_gdx") %>%
 
 # Import scenario data
 scen_mat <- read_csv(paste(ddir,"scenario_table.csv",sep="/"))
-if(bind_baseline){source(paste(othdir,"220818_BindBaseline.R",sep="/"))}
+if(bind_baseline){source(paste(pdir2,"BindwoCTLGTL.R",sep="/"))}
 
 # Load sub-programs
 source(paste(mdir,"dataframe.R",sep="/"))

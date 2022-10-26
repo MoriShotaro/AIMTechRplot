@@ -1,3 +1,18 @@
+MyThemeLine <- theme_bw() +
+  theme(
+    panel.border=element_blank(),
+    panel.grid.minor = element_line(color = NA), 
+    axis.line=element_line(colour="black"),
+    panel.background=element_rect(fill = "white"),
+    panel.grid.major=element_blank(),
+    strip.background=element_rect(fill="white", colour="white"),
+    strip.text.x = element_text(size=10, colour = "black", angle = 0,face="bold"),
+    axis.text.x=element_text(size = 10,angle=45, vjust=0.9, hjust=1, margin = unit(c(t = 0.3, r = 0, b = 0, l = 0), "cm")),
+    axis.text.y=element_text(size = 10,margin = unit(c(t = 0, r = 0.3, b = 0, l = 0), "cm")),
+    legend.text = element_text(size = 10),
+    axis.ticks.length=unit(0.15,"cm")
+  )
+
 fplot_area <- function(var, totvar=NA, ylabel, w=150, h=100, cpt=NULL, name_file, adj_position='stack'){
   dt <- filter(df_all, Variable %in% var$Variable) %>%
     mutate(Scenario=factor(Scenario, levels=scen_mat$Scenario)) %>%
@@ -28,7 +43,8 @@ fplot_area <- function(var, totvar=NA, ylabel, w=150, h=100, cpt=NULL, name_file
       theme(legend.position='bottom', legend.title=element_blank(), 
             axis.text.x=element_text(angle=45, hjust=1),
             strip.background=element_blank(),
-            panel.grid.minor=element_blank())
+            panel.grid.minor=element_blank())+
+      MyThemeLine
     if(name_file!=F){
       ggsave(filename=paste0(odir,"/general/",name_file,".png"), plot=p, width=w, height=h, units='mm', dpi=300)
     }
@@ -53,7 +69,8 @@ fplot_bar <- function(var, per=year_all, ylabel, w=150, h=100, cpt=NULL, name_fi
       facet_grid(.~Year, scales='free_x', space='free_x')+
       labs(title=cpt, x=NULL, y=ylabel)+
       theme_bw()+
-      theme(legend.position='right', strip.background=element_blank(),panel.grid.minor=element_blank())
+      theme(legend.position='right', strip.background=element_blank(),panel.grid.minor=element_blank())+
+      MyThemeLine
     if(name_file!=F){
       ggsave(filename=paste0(odir,"/plot/",reg_in,"/", name_file, ".png"), plot=p, width=w, height=h, units='mm', dpi=300)
     }
@@ -87,7 +104,8 @@ fplot_fbar <- function(var, ylabel, w=150, h=100, cpt=NULL, name_file, adj_posit
       theme(legend.position='bottom', legend.title=element_blank(), 
             axis.text.x=element_text(angle=45, hjust=1),
             strip.background=element_blank(),
-            panel.grid.minor=element_blank())
+            panel.grid.minor=element_blank())+
+      MyThemeLine
     if(name_file!=F){
       ggsave(filename=paste0(odir,"/general/",name_file,".png"), plot=p, width=w, height=h, units='mm', dpi=300)
     }
@@ -111,7 +129,8 @@ fplot_path <- function(var, ylabel, ylim=NULL, ylab=waiver(), w=150, h=100, cpt=
     }
     p <- p+theme_bw()+
       theme(legend.position='right', strip.background=element_blank(),panel.grid.minor=element_blank(),
-            axis.text.x=element_text(angle=45, hjust=1))
+            axis.text.x=element_text(angle=45, hjust=1))+
+      MyThemeLine
     if(name_file!=F){
       ggsave(filename=paste0(odir,"/general/",name_file,".png"), plot=p, width=w, height=h, units='mm', dpi=300)
     }
@@ -132,7 +151,8 @@ fplot_scatter <- function(vars, xlab=NULL, ylab=NULL, w=150, h=100, cpt=NULL, na
       geom_point(aes(x=Value_x, y=Value_y, color=Year, shape=Scenario), show.legend=T, alpha=1)+
       labs(title=cpt, x=xlab, y=ylab)+
       theme_bw()+
-      theme(legend.position='right', strip.background=element_blank(),panel.grid.minor=element_blank())
+      theme(legend.position='right', strip.background=element_blank(),panel.grid.minor=element_blank())+
+      MyThemeLine
     if(name_file!=F){
       ggsave(filename=paste0(odir,"/plot/",reg_in,"/", name_file, ".png"), plot=p, width=w, height=h, units='mm', dpi=300)
     }
@@ -151,7 +171,8 @@ fplot_loadcurve <- function(dt_inp,reg,scen, ylabel, w=150, h=100, cpt=NULL, nam
       facet_grid(Season~Day)+
       labs(title=cpt, x=NULL, y=ylabel)+
       theme_bw()+
-      theme(legend.position='right', strip.background=element_blank(),panel.grid.minor=element_blank())
+      theme(legend.position='right', strip.background=element_blank(),panel.grid.minor=element_blank())+
+      MyThemeLine
     if(name_file!=F){
       ggsave(filename=paste0(odir,"/plot/",reg_in,"/", name_file, ".png"), plot=p, width=w, height=h, units='mm', dpi=300)
     }
