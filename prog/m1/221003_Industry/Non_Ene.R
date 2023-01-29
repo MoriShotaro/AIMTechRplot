@@ -15,6 +15,7 @@ library(scales)
 library(data.table)
 library(purrr)
 library(readxl)
+library(gdxdt)
 
 # Setting -----------------------------------------------------------------
 
@@ -51,7 +52,7 @@ serv_t <- rgdx.param(paste0(ddir,"/serv_global_SSP2.gdx"),"serv_t")
 
 # regional non-energy use in PJ
 df_shrALL <- ebal_33 %>% mutate(Y=as.numeric(as.character(Y))) %>% 
-  filter(FL=="CHM",PR%in%PR_NE,Y>=2010) %>%
+  filter(FL=="CHM",PR%in%PR_NE,Y>=2005) %>%
   group_by(R33,Y) %>% 
   mutate(ebal_33=ebal_33/sum(ebal_33)) %>%
   ungroup() %>% select(-FL) %>% 
@@ -259,8 +260,57 @@ df_ToAIMTech_Oth <- df_demChem %>%
   summarise(Value=sum(Value))
 
 # Join data
-df_ToAIMTech <- bind_rows(df_ToAIMTech_Chem,df_ToAIMTech_Oth)
-wgdx(paste0(odir,"/DemChem.gdx"))
+df_ToAIMTech <- bind_rows(df_ToAIMTech_Chem,df_ToAIMTech_Oth) %>%
+  pivot_wider(names_from=Product,values_from=Value) %>% 
+  rename("R"=R33,"H"=Y,"NEN_NH3"=Ammonia,"NEN_MOH"=Methanol,"NEN_HVC"=HVC,"NEN_OTH"=Other) %>% 
+  mutate(I=rep("NEN")) %>%
+  pivot_longer(cols=-c(R,I,H),names_to="J",values_to="Value") %>%
+  pivot_wider(names_from=H,values_from=Value) %>% 
+  select(R,I,J,everything())
+
+# df_ToAIMTech_Unit <- data.frame(Product=c("Ammonia","Methanol","HVC","Other"),Unit=c("Mt-product","Mt-product","Mt-product","PJ-feedstock"))
+
+# Write GDX file
+lst1 <- wgdx.reshape(df_ToAIMTech,symDim=4,symName="serv_t",tName="H")
+# lst2 <- wgdx.reshape(df_ToAIMTech_Unit,symDim=2,symName="Unit",tName="fuga")
+# lst <- union(lst1,lst2)
+wgdx.lst(paste0(odir,"/dem_Chem.gdx"),lst1)
+
+
+# HVC feed stock share -----------------------------------------------------
+
+# Read original data without column names
+df_IEAebal <- readLines(paste0(ddir,"/IEA_Ebal_2013.csv")) %>% 
+  str_replace_all('",',"',") %>% 
+  str_replace_all('^"|"$', "'") %>%
+  str_replace_all(',"', ",'") %>% 
+  paste(collapse='\n') %>% 
+  fread(quote="'",skip=2) %>% 
+  filter(V1>=2000)
+
+# Read and join column names
+cols <- readLines(paste0(ddir,"/IEA_Ebal_2013.csv")) %>% 
+  str_replace_all('",',"',") %>% 
+  str_replace_all('^"|"$', "'") %>%
+  str_replace_all(',"', ",'") %>%
+  str_replace_all(' ', "") %>%
+  paste(collapse='\n') %>%
+  fread(quote="'",nrow=1,fill=TRUE) %>% unlist()
+
+names(cols)[[1]] <- "FLOW"; names(cols)[[2]] <- "COUNTRY"
+colnames(df_IEAebal) <- names(cols)
+
+# Filter non-energy use
+df_NENebal <- df_IEAebal %>% 
+  filter(str_detect(FLOW,"Non-energy")) %>%
+  pivot_longer(cols=-c(FLOW,COUNTRY),names_to="PRODUCT",values_to="VALUE") %>% 
+  mutate(VALUE=str_replace_all(VALUE,"\\.\\.","0")) %>% 
+  mutate(VALUE=str_replace_all(VALUE,"c","0")) %>%
+  mutate(VALUE=str_replace_all(VALUE,"x","0")) %>%
+  mutate(VALUE=as.numeric(VALUE))
+
+df_Chemebal <- df_NENebal %>% 
+  filter(FLOW=='Memo: Non-energy use in chemical/petrochemical')
 
 # plot --------------------------------------------------------------------
 
@@ -309,6 +359,15 @@ g <- df_demChem_Mt %>%
 plot(g)
 ggsave(paste0(odir,"/demChem_feed_Mt.png"),g,width=4,height=4)
 
+g <- df_demChem %>% 
+  group_by(Y,Feedstock,Product) %>% 
+  summarize(Value=sum(Value)) %>%
+  filter(Product!="Total") %>% 
+  ggplot() +
+  geom_area(aes(x=Y,y=Value,fill=Product)) +
+  scale_fill_brewer(palette="YlGnBu") +
+  facet_wrap(vars(Feedstock),nrow=1)
+plot(g)
 
 # g <- df_nen %>%
 #   filter(PR_NE!="Total") %>% 

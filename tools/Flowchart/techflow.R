@@ -12,8 +12,8 @@ library(gdxrrw)
 # rootdir <- getwd()
 
 output_dir <- paste(odir,"techflow",sep="/")
-input_dir <- paste(cdir,"data",project,date,sep="/")
-scen_name <- "Baseline"
+input_dir <- paste(cdir,"data",date,project,sep="/")
+scen_name <- "BaU"
 
 if(!dir.exists(output_dir)){dir.create(output_dir,recursive=T)}
 
@@ -66,5 +66,6 @@ f_flowplot <- function(SECTOR){
 # ls_plot_sec <- c('PSS','FRG','H_H','CCS')
 # lapply(ls_plot_sec,f_flowplot)
 
+lapply(c('NEN'),f_flowplot)
 lapply(c('COL','OIL','GAS','H_H','BIM','CCS'),f_flowplot)
 lapply(c('PSS','FRG','BNK'),f_flowplot)
