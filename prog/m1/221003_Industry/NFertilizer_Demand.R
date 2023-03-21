@@ -107,7 +107,6 @@ Fer_Use <- ind_t %>%
   ungroup() %>% select(-R17,-POP)
 
 
-
 Fer_Use_Y1 <- Fer_Use %>%
   group_by(R33) %>% nest() %>% 
   mutate(data=map(data,~{

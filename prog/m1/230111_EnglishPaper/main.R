@@ -41,7 +41,8 @@ igdx(gdir)
 # Input data --------------------------------------------------------------
 
 df <- rgdx.param(paste0(ddir,'/2201281605/main/merged_output.gdx'),'iamc_gdx') %>%
-  filter(Sr=='World',Sc!='historical') %>%
+  filter(Sr=='JPN',Sc!='historical') %>%
+#  filter(Sr=='World',Sc!='historical') %>%
   mutate(Y5=as.numeric(as.character(Y5)),Sv=as.character(Sv),Sc=as.character(Sc),Sr=as.character(Sr)) %>%
   complete(Sc,Sr,Sv,Y5=full_seq(Y5,5),fill=list(iamc_gdx=0)) %>%
   rename(value=iamc_gdx) %>% 
@@ -658,3 +659,35 @@ g_str <- df_str %>%
   theme(legend.position='bottom')
 plot(g_str)
 ggsave(paste0(odir,'/Sectoral_StrInv_path_BaselineDiff.png'),width=10,height=4)
+
+
+# Mitigation cost ---------------------------------------------------------
+
+g_prccar <- df %>%
+  filter(Sv=='Prc_Car',Sc!='Baseline',Y5%in%c(2020:2050)) %>% 
+  ggplot() +
+  geom_path(aes(x=Y5,y=value,color=Sc),size=0.4) +
+  geom_point(aes(x=Y5,y=value,color=Sc,shape=Sc),stroke=0.7) +
+  scale_color_manual(values=c('darkgoldenrod2','indianred2','deepskyblue3')) +
+  scale_shape_manual(values=c(0,1,2)) +
+  labs(y=expression(paste('Carbon prices (US$ t-',{CO[2]^-1},')'))) +
+  MyTheme 
+plot(g_prccar)
+
+g_totcos <- df %>% 
+  filter(Sv=='Pol_Cos_Add_Tot_Ene_Sys_Cos',Sc!='Baseline') %>%
+  select(-Sr) %>% 
+  filter(Y5 %in% c(2025:2050)) %>% 
+  mutate(discount=0.95^(Y5-2023)) %>%
+  mutate(value=value*discount*5/1000) %>% 
+  group_by(Sc) %>% 
+  summarise(value=sum(value)) %>% 
+  ggplot() +
+  geom_bar(aes(x=Sc,y=value),stat='identity') +
+  labs(y='Cumulative energy system cost\n(trillion US$)') +
+  MyTheme
+plot(g_totcos)
+
+g_mitcost <- g_prccar + g_totcos + plot_layout(width=c(2,1))
+plot(g_mitcost)
+ggsave(paste0(odir,'/MitigationCost.png'),width=7,height=4)

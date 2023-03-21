@@ -61,33 +61,60 @@ for (i in scenario_list$Sc){
   assign(paste0('df_',i),df)
 }
 
-# df_all <- bind_rows(df_Baseline,
-#                 df_INDCi2030_500f,
-#                 df_INDCi2030_500f_Biofueloff,
-#                 df_INDCi2030_500f_Biofueloff_Synfueloff) %>%
-#   select(-bn_t1,-tn,-res_occ_l,-cn2) %>%
-#   group_by(H,I,Sc) %>% 
-#   summarise(Value=sum(str_inv)) %>%
-#   pivot_wider(names_from=Sc,values_from=Value,values_fill=0) %>% 
-#   # mutate(across(starts_with('INDC'),~.-Baseline)) %>% 
-#   # select(-Baseline) %>% 
-#   pivot_longer(cols=starts_with(c('INDC','Baseline')),names_to='Sc',values_to='Value') %>%
-#   filter(Value!=0)
-# 
-# df <- df_all %>%
-#   mutate(H=as.numeric(as.character(H))) %>%
-#   mutate(flag=ceiling(H/5)*5) %>%
-#   # mutate(flag=5*floor(H/5-404)+2020) %>%
-#   group_by(I,flag,Sc) %>%
-#   summarise(Value=mean(Value)) %>%
-#   rename('Y5'=flag) %>% 
-#   mutate(Sc=recode(Sc,INDCi2030_500f='1.5C Conv',
-#                    INDCi2030_500f_Biofueloff='1.5C w/ Synfuel',
-#                    INDCi2030_500f_Biofueloff_Synfueloff='1.5C w/o Synfuel')) %>% 
-#   full_join(df_sector) %>%
-#   mutate(I=factor(I,levels=df_sector$I)) %>% 
-#   drop_na()
-  
+df_all <- bind_rows(df_Baseline,
+                df_INDCi2030_500f,
+                df_INDCi2030_500f_Biofueloff,
+                df_INDCi2030_500f_Biofueloff_Synfueloff) %>%
+  select(-bn_t1,-tn,-res_occ_l,-cn2) %>%
+  group_by(H,I,Sc) %>%
+  summarise(Value=sum(str_inv)) %>%
+  pivot_wider(names_from=Sc,values_from=Value,values_fill=0) %>%
+  # mutate(across(starts_with('INDC'),~.-Baseline)) %>%
+  # select(-Baseline) %>%
+  pivot_longer(cols=starts_with(c('INDC','Baseline')),names_to='Sc',values_to='Value') %>%
+  filter(Value!=0)
+
+df_techall <- bind_rows(df_Baseline,
+                     df_INDCi2030_500f,
+                     df_INDCi2030_500f_Biofueloff,
+                     df_INDCi2030_500f_Biofueloff_Synfueloff) %>%
+  select(-bn_t1,-tn,-res_occ_l,-cn2) %>%
+  group_by(H,I,L,Sc) %>%
+  summarise(Value=sum(str_inv)) %>%
+  pivot_wider(names_from=Sc,values_from=Value,values_fill=0) %>%
+  # mutate(across(starts_with('INDC'),~.-Baseline)) %>%
+  # select(-Baseline) %>%
+  pivot_longer(cols=starts_with(c('INDC','Baseline')),names_to='Sc',values_to='Value') %>%
+  filter(Value!=0)
+
+df <- df_all %>%
+  mutate(H=as.numeric(as.character(H))) %>%
+  mutate(flag=ceiling(H/5)*5) %>%
+  # mutate(flag=5*floor(H/5-404)+2020) %>%
+  group_by(I,flag,Sc) %>%
+  summarise(Value=mean(Value)) %>%
+  rename('Y5'=flag) %>%
+  mutate(Sc=recode(Sc,INDCi2030_500f='1.5C Conv',
+                   INDCi2030_500f_Biofueloff='1.5C w/ Synfuel',
+                   INDCi2030_500f_Biofueloff_Synfueloff='1.5C w/o Synfuel')) %>%
+  full_join(df_sector) %>%
+  mutate(I=factor(I,levels=df_sector$I)) %>%
+  drop_na()
+
+df_tech <- df_techall %>%
+  mutate(H=as.numeric(as.character(H))) %>%
+  mutate(flag=ceiling(H/5)*5) %>%
+  # mutate(flag=5*floor(H/5-404)+2020) %>%
+  group_by(I,L,flag,Sc) %>%
+  summarise(Value=mean(Value)) %>%
+  rename('Y5'=flag) %>%
+  mutate(Sc=recode(Sc,INDCi2030_500f='1.5C Conv',
+                   INDCi2030_500f_Biofueloff='1.5C w/ Synfuel',
+                   INDCi2030_500f_Biofueloff_Synfueloff='1.5C w/o Synfuel')) %>%
+  full_join(df_sector) %>%
+  mutate(I=factor(I,levels=df_sector$I)) %>%
+  drop_na()
+
 df_all2 <- bind_rows(df_Baseline,
                  df_INDCi2030_500f,
                  df_INDCi2030_500f_Biofueloff,
@@ -115,48 +142,87 @@ df2 <- df_all2 %>%
   mutate(I=factor(I,levels=df_sector$I)) %>% 
   drop_na()
 
+df3 <- df_all2 %>%
+  mutate(H=as.numeric(as.character(H))) %>%
+  # mutate(flag=5*floor(H/5-404)+2020) %>%
+  group_by(I,Sc,H) %>%
+  summarise(Value=mean(Value)) %>%
+  rename('Y5'=H) %>% 
+  mutate(Sc=recode(Sc,INDCi2030_500f='1.5C Conv',
+                   INDCi2030_500f_Biofueloff='1.5C w/ Synfuel',
+                   INDCi2030_500f_Biofueloff_Synfueloff='1.5C w/o Synfuel')) %>% 
+  full_join(df_sector) %>%
+  mutate(I=factor(I,levels=df_sector$I)) %>% 
+  drop_na()
+
 # Analysis ----------------------------------------------------------------
 
-# g <- df %>%
-#   group_by(Y5,Sc,I2) %>% 
-#   summarise(Value=sum(Value)) %>%
-#   filter(Y5>=2020,Sc%in%c('1.5C w/ Synfuel','1.5C w/o Synfuel')) %>%
-#   ggplot() +
-#   geom_path(aes(x=Y5,y=Value,color=Sc)) +
-#   facet_wrap(vars(I2),ncol=4)
-# plot(g)
-# ggsave(paste0(odir,'/Sectoral_StrInv_path.png'),g,width=10,height=5)
-# 
-# g <- df %>%
-#   filter(Y5>=2020,Sc%in%c('1.5C w/ Synfuel','1.5C w/o Synfuel')) %>%
-#   ggplot() +
-#   geom_bar(aes(x=Y5,y=Value,fill=I),stat='Identity') +
-#   facet_grid(rows=vars(Sc),cols=vars(I2))
-# plot(g)
-# ggsave(paste0(odir,'/SubSectoral_StrInv_bar.png'),g,width=10,height=10)
-# 
-# g <- df %>%
-#   filter(Y5>=2020,Sc%in%c('1.5C w/ Synfuel','1.5C w/o Synfuel')) %>%
-#   pivot_wider(names_from=Sc,values_from=Value,values_fill=0) %>%
-#   mutate(diff=`1.5C w/o Synfuel`-`1.5C w/ Synfuel`) %>%
-#   pivot_longer(cols=starts_with(c('1.5C','diff')),names_to='Sc',values_to='Value') %>%
-#   filter(Sc=='diff') %>% 
-#   ggplot() +
-#   geom_bar(aes(x=Y5,y=Value,fill=I),stat='Identity') +
-#   facet_wrap(vars(I2),ncol=4)
-# plot(g)
-# ggsave(paste0(odir,'/Sectoral_StrInv_Synfuel.png'),g,width=10,height=5)
-# 
-# g <- df %>%
-#   filter(Y5>=2020,Sc%in%c('1.5C w/ Synfuel','1.5C w/o Synfuel')) %>%
-#   pivot_wider(names_from=Sc,values_from=Value,values_fill=0) %>%
-#   mutate(diff=`1.5C w/o Synfuel`-`1.5C w/ Synfuel`) %>%
-#   pivot_longer(cols=starts_with(c('1.5C','diff')),names_to='Sc',values_to='Value') %>%
-#   filter(Sc=='diff') %>% 
-#   ggplot() +
-#   geom_bar(aes(x=Y5,y=Value,fill=I),stat='Identity')
-# plot(g)
-# ggsave(paste0(odir,'/SubSectoral_StrInv_Synfuel.png'),g,width=5,height=5)
+g <- df %>%
+  group_by(Y5,Sc,I2) %>%
+  summarise(Value=sum(Value)) %>%
+  filter(Y5>=2020,Sc%in%c('1.5C w/ Synfuel','1.5C w/o Synfuel')) %>%
+  ggplot() +
+  geom_path(aes(x=Y5,y=Value,color=Sc)) +
+  facet_wrap(vars(I2),ncol=4)
+plot(g)
+ggsave(paste0(odir,'/Sectoral_StrInv_path.png'),g,width=10,height=5)
+
+g <- df %>%
+  filter(Y5>=2020,Sc%in%c('1.5C w/ Synfuel','1.5C w/o Synfuel')) %>%
+  ggplot() +
+  geom_bar(aes(x=Y5,y=Value,fill=I),stat='Identity') +
+  facet_grid(rows=vars(Sc),cols=vars(I2))
+plot(g)
+ggsave(paste0(odir,'/SubSectoral_StrInv_bar.png'),g,width=10,height=10)
+
+g <- df %>%
+  filter(Y5>=2020,Sc%in%c('1.5C w/ Synfuel','1.5C w/o Synfuel')) %>%
+  pivot_wider(names_from=Sc,values_from=Value,values_fill=0) %>%
+  mutate(diff=`1.5C w/o Synfuel`-`1.5C w/ Synfuel`) %>%
+  pivot_longer(cols=starts_with(c('1.5C','diff')),names_to='Sc',values_to='Value') %>%
+  filter(Sc=='diff') %>%
+  ggplot() +
+  geom_bar(aes(x=Y5,y=Value,fill=I),stat='Identity') +
+  facet_wrap(vars(I2),ncol=4)
+plot(g)
+ggsave(paste0(odir,'/Sectoral_StrInv_Synfuel.png'),g,width=10,height=5)
+
+g <- df %>%
+  filter(Y5>=2020,Sc%in%c('1.5C w/ Synfuel','1.5C Conv'),I2=='SUP') %>%
+  pivot_wider(names_from=Sc,values_from=Value,values_fill=0) %>%
+  mutate(diff=`1.5C Conv`-`1.5C w/ Synfuel`) %>%
+  pivot_longer(cols=starts_with(c('1.5C','diff')),names_to='Sc',values_to='Value') %>%
+  filter(Sc=='diff') %>%
+  ggplot() +
+  geom_bar(aes(x=Y5,y=Value,fill=I),stat='Identity') +
+  facet_wrap(vars(I2),ncol=4)
+plot(g)
+ggsave(paste0(odir,'/Sectoral_StrInv_Biofuel.png'),g,width=10,height=5)
+
+
+g <- df_tech %>%
+  filter(Y5>=2020,Sc%in%c('1.5C w/ Synfuel','1.5C Conv'),I=='CRN',!str_detect(L,'CRN_INT')) %>%
+  pivot_wider(names_from=Sc,values_from=Value,values_fill=0) %>%
+  mutate(diff=`1.5C Conv`-`1.5C w/ Synfuel`) %>%
+  pivot_longer(cols=starts_with(c('1.5C','diff')),names_to='Sc',values_to='Value') %>%
+  filter(Sc=='diff') %>%
+  ggplot() +
+  geom_bar(aes(x=Y5,y=Value,fill=L),stat='Identity')
+plot(g)
+ggsave(paste0(odir,'/Sectoral_StrInv_Biofuel.png'),g,width=10,height=5)
+
+
+
+g <- df %>%
+  filter(Y5>=2020,Sc%in%c('1.5C w/ Synfuel','1.5C w/o Synfuel')) %>%
+  pivot_wider(names_from=Sc,values_from=Value,values_fill=0) %>%
+  mutate(diff=`1.5C w/o Synfuel`-`1.5C w/ Synfuel`) %>%
+  pivot_longer(cols=starts_with(c('1.5C','diff')),names_to='Sc',values_to='Value') %>%
+  filter(Sc=='diff') %>%
+  ggplot() +
+  geom_bar(aes(x=Y5,y=Value,fill=I),stat='Identity')
+plot(g)
+ggsave(paste0(odir,'/SubSectoral_StrInv_Synfuel.png'),g,width=5,height=5)
 
 
 # Analysis2 ---------------------------------------------------------------
@@ -173,12 +239,29 @@ g <- df2 %>%
   geom_hline(yintercept=0,linetype='dashed',color='grey60',size=0.4) +
   scale_color_manual(values=c('darkgoldenrod2','indianred2','deepskyblue3')) +
   scale_shape_manual(values=c(0,1,2)) +
-  labs(y='Share of energy carriers in final energy (%)') +
   facet_wrap(vars(I2),nrow=1) +
   MyTheme +
   theme(legend.position='bottom')
 plot(g)
-ggsave(paste0(odir,'/Sectoral_StrInv_path_BaselineDiff.png'),g,width=10,height=4)
+ggsave(paste0(odir,'/Sectoral_StrInv_path_BaselineDiff2.png'),g,width=10,height=4)
+
+g <- df3 %>%
+  group_by(Y5,Sc,I2) %>% 
+  summarise(Value=sum(Value)) %>%
+  filter(Y5>=2020,Sc%in%c('1.5C Conv','1.5C w/ Synfuel','1.5C w/o Synfuel')) %>%
+  mutate(I2=factor(I2,levels=c('IND','BLD','TRP','SUP'))) %>% 
+  mutate(I2=recode(I2,IND='Industry',BLD='Buildings',TRP='Transport',SUP='Energy supply')) %>% 
+  ggplot() +
+  geom_path(aes(x=Y5,y=Value,color=Sc),size=0.4) +
+  geom_point(aes(x=Y5,y=Value,color=Sc,shape=Sc),stroke=0.7) +
+  geom_hline(yintercept=0,linetype='dashed',color='grey60',size=0.4) +
+  scale_color_manual(values=c('darkgoldenrod2','indianred2','deepskyblue3')) +
+  scale_shape_manual(values=c(0,1,2)) +
+  facet_wrap(vars(I2),nrow=1) +
+  MyTheme +
+  theme(legend.position='bottom')
+plot(g)
+ggsave(paste0(odir,'/Sectoral_StrInv_path_BaselineDiff3.png'),g,width=10,height=4)
 
 # g <- df2 %>%
 #   filter(Y5>=2020,Sc%in%c('1.5C w/ Synfuel','1.5C w/o Synfuel')) %>%

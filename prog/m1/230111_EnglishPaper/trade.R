@@ -28,7 +28,8 @@ df_stock <- rgdx.param(paste0(ddir,'/2201281605/gams_output/gdx_merged/trade.gdx
                        Sv=="LPGT"~31.7)) %>%  
   mutate(value=value*Load_Cap/1000) %>% # 10^3 ton -> 10^6 ton (million dwt)
   mutate(Sv=factor(Sv,levels=c('BULK','CRUD','PROD','LNGT','LPGT'))) %>% 
-  mutate(Sv=recode(Sv,BULK='Bulk carrier',CRUD='Crude oil tanker',PROD='Products tanker',LNGT='LNG tanker',LPGT='Ammonia tanker'))
+  mutate(Sv=recode(Sv,BULK='Bulk carrier',CRUD='Crude oil tanker',PROD='Products tanker',LNGT='LNG tanker',LPGT='Ammonia tanker')) %>% 
+  select(-Load_Cap)
 
 
 
@@ -98,7 +99,31 @@ g_stock <- df_stock %>%
 plot(g_stock)  
 ggsave(paste0(odir,'/EnergyTradeVessel.png'),width=5,height=6)
 
+g_stock2 <- df_stock %>%
+  filter(Y5>=2030,Sc!='Baseline') %>%
+  pivot_wider(names_from=Sv,values_from=value) %>%
+  mutate(Total=`Bulk carrier`+`Crude oil tanker`+`Products tanker`+`LNG tanker`+`Ammonia tanker`) %>%
+  pivot_longer(col=-c(Sc,Y5),names_to='Sv',values_to='value') %>% 
+  mutate(Sv=factor(Sv,levels=c('Bulk carrier','Crude oil tanker','Products tanker','LNG tanker','Ammonia tanker','Total'))) %>% 
+  ggplot() +
+  geom_path(aes(x=Y5,y=value,color=Sc),size=0.5) +
+  geom_point(aes(x=Y5,y=value,color=Sc,shape=Sc),size=0.5,stroke=0.7) +
+  scale_color_manual(values=c('darkgoldenrod2','indianred2','deepskyblue3')) +
+  scale_shape_manual(values=c(0,1,2)) +
+  scale_y_continuous(limits=c(0,NA)) +
+  labs(y='Energy trade vessel (million dwt)') +
+  facet_wrap(vars(Sv),scales='free') +
+  MyTheme +
+  theme(
+    legend.position='bottom'
+  )
+plot(g_stock2)  
+ggsave(paste0(odir,'/EnergyTradeVessel.png'),width=5,height=6)
+
 
 g_trade <- g_fbar + plot_spacer() + g_stock + plot_layout(width=c(4,0.25,5))
 ggsave(paste0(odir,'/Trade_Vessel.png'),width=12,height=5)
+
+g_trade <- g_fbar + plot_spacer() + g_stock2 + plot_layout(width=c(4,0.25,5))
+ggsave(paste0(odir,'/Trade_Vessel2.png'),width=12,height=5)
 
